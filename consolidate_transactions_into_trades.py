@@ -19,7 +19,7 @@ class Position(object):
 
     def print_position(self):
         cost_open = self.total_in / self.total_number_of_shares
-        if self.total_out is not None:
+        if self.close_date is not None:
             cost_close = self.total_out / self.total_number_of_shares
             profit = (self.total_out - self.total_in)
             profit_percentage = ("%.2f" % (100 * profit / self.total_in)) + "%"
