@@ -54,10 +54,13 @@ def getSourceCode(tradesBySymbol, symbol):
     sourceCode = '''
 //@version=3
 study("My Trades", overlay=true)
+hoursMinutesBar = hour*60 + minute
+END_OF_DAY = 16*60 + 30
+hoursMinutesLastBar = END_OF_DAY - interval
+isLastBar = hoursMinutesBar == hoursMinutesLastBar
 check(t) =>
-    hoursMinutesBar = hour*60 + minute
-    hourMinutesT = hour(t)*60 + minute(t)
-    year == year(t) and month == month(t) and dayofmonth == dayofmonth(t) and (isdaily or isintraday and hoursMinutesBar >= hourMinutesT - 60 and hoursMinutesBar < hourMinutesT )
+    hoursMinutesT = hour(t)*60 + minute(t)
+    year == year(t) and month == month(t) and dayofmonth == dayofmonth(t) and (isdaily or isintraday and ((hoursMinutesBar >= hoursMinutesT - 60 and hoursMinutesBar < hoursMinutesT) or (isLastBar and hoursMinutesT >= END_OF_DAY)))
 '''
     if symbol is not None:
         tradesFilteredBySymbol = [elem["trades"] for elem in tradesBySymbol if elem["symbol"] == symbol][0] # they are grouped by symbol, so we need the first and only element
