@@ -40,6 +40,8 @@ def consolidateTradesBySymbol(trades):
     return tradesBySymbol
 
 def getTradesCondition(symbol, dates):
+    if len(dates) == 0:
+        return ""
     tickeridcondition = "tickerid == 'BATS:%s'" % symbol
     datesCondition = " or ".join(["check(timestamp(%d,%d,%d,%d,%d))" % (date['year'], date['month'], date['day'], date['hour'], date['minute']) for date in dates])
     return "%s and (%s)" % (tickeridcondition, datesCondition)
@@ -86,7 +88,7 @@ check(t) =>
                 "shape": style_mapping[trade["side"]]["shape"],
                 "location": style_mapping[trade["side"]]["location"],
                 "color": style_mapping[trade["side"]]["color"],
-                "text": str(int(trade["quantity"]))+"\\n$"+str(float(trade["quantity"])*float(trade["price"]))
+                "text": "%s\\n$%s\\n$%s" % (str(int(trade["quantity"])), str(float(trade["price"])), str(float(trade["quantity"])*float(trade["price"])))
             } for trade in tradesFilteredBySymbol]
 
         sourceCode += "\n" + "\n".join([getPlotShapeFunction(trade) for trade in allTrades])
@@ -118,6 +120,7 @@ parser.add_argument('--debug', action='store_true', help='store raw JSON output 
 parser.add_argument('--username', required=True, help='your Robinhood username')
 parser.add_argument('--password', required=True, help='your Robinhood password')
 parser.add_argument('--symbol', help='specific ticker symbol you want (this feature allows you to see the last 64 transactions on the specified symbol)')
+
 exporter.addArgumentsToParser(parser)
 args = parser.parse_args()
 
