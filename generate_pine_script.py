@@ -3,6 +3,8 @@ from datetime import datetime
 from GetRobinhoodTrades import getRobinhoodTrades
 import Exporter
 
+DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
+
 def parseTrades(trades):
     parsedTrades = []
     for trade in trades:
@@ -20,8 +22,9 @@ def parseTrades(trades):
                 "quantity": trade["quantity"],
                 "symbol": trade["symbol"],
                 "side": trade["side"],
-            })
-        except:
+                "timestamp": trade["timestamp"]})
+        except Exception as e:
+            print e
             continue
     return parsedTrades
 
@@ -29,11 +32,10 @@ def consolidateTradesBySymbol(trades):
     symbols = list(set([trade["symbol"] for trade in trades]))
     tradesBySymbol = [] # [{"symbol":..,"buyTrades":..,"sellTrades":..}]
     for symbol in symbols:
-        tradesFilteredBySymbol = [trade for trade in trades if trade["symbol"] == symbol]    
+        tradesFilteredBySymbol = [trade for trade in trades if trade["symbol"] == symbol]
         tradesBySymbol.append({
             "symbol": symbol,
-            "buyTrades": [trade for trade in tradesFilteredBySymbol if trade["side"] == "buy"],
-            "sellTrades": [trade for trade in tradesFilteredBySymbol if trade["side"] == "sell"]
+            "trades": tradesFilteredBySymbol
         })
     return tradesBySymbol
 
@@ -43,29 +45,60 @@ def getTradesCondition(symbol, dates):
     return "%s and (%s)" % (tickeridcondition, datesCondition)
 
 def getPlotShapeFunction(trade):
-    return """plotshape(%s, style=shape.%s,  location=location.%s, color=%s, text="%s", size="%s")""" % (trade["condition"], trade["shape"], trade["location"], trade["color"], "", "size.normal")
+    return """plotshape(%s, style=shape.%s,  location=location.%s, color=%s, text="%s", size=%s)""" % (trade["condition"], trade["shape"], trade["location"], trade["color"], trade["text"], "size.normal")
 
 def getBGColorFunction(trade):
     return """bgcolor(%s ? %s : na, transp=40)""" % (trade["condition"], trade["color"])
 
-def getSourceCode(trades):
+def getSourceCode(tradesBySymbol, symbol):
     sourceCode = '''
 //@version=3
 study("My Trades", overlay=true)
 check(t) =>
-    a = isintraday and year == year(t) and month == month(t) and dayofmonth == dayofmonth(t) and hour == hour(t) and minute >= floor(minute(t)/interval) * interval and minute < ceil(minute(t)/interval) * interval
-    b = isdaily and year == year(t) and month == month(t) and dayofmonth >= floor(dayofmonth(t)/interval) * interval and dayofmonth <= ceil(dayofmonth(t)/interval) * interval
-    a or b
+    hoursMinutesBar = hour*60 + minute
+    hourMinutesT = hour(t)*60 + minute(t)
+    year == year(t) and month == month(t) and dayofmonth == dayofmonth(t) and (isdaily or isintraday and hoursMinutesBar >= hourMinutesT - 60 and hoursMinutesBar < hourMinutesT )
 '''
-    for trade in trades:
-        symbol = trade["symbol"]
-        buyTradesCondition = getTradesCondition(trade["symbol"], trade["buyTrades"])
-        sellTradesCondition = getTradesCondition(trade["symbol"], trade["sellTrades"])
-        # change this to a class
-        buy = {"condition": buyTradesCondition, "shape": "triangleup", "location": "belowbar", "color": "green", "text": ""}
-        sell = {"condition": sellTradesCondition, "shape": "triangledown", "location": "abovebar", "color": "red", "text": ""}
-        sourceCode += "\n" + "\n".join([getPlotShapeFunction(trade) for trade in [buy, sell] if len(trade["condition"]) >  0])
-        # sourceCode += "\n" + "\n".join([getBGColorFunction(trade) for trade in [buy, sell]])
+    if symbol is not None:
+        tradesFilteredBySymbol = [elem["trades"] for elem in tradesBySymbol if elem["symbol"] == symbol][0] # they are grouped by symbol, so we need the first and only element
+        tradesFilteredBySymbol.sort(key=lambda row: datetime.strptime(row['timestamp'][:row['timestamp'].find(".")], DATE_FORMAT))
+        tradesFilteredBySymbol = tradesFilteredBySymbol[-64:] # take last 64 trades
+
+        style_mapping = {
+            "buy": {
+                "shape": "triangleup",
+                "location": "belowbar",
+                "color": "green",
+            },
+            "sell": {
+                "shape": "triangledown",
+                "location": "abovebar",
+                "color": "red"
+            }
+        }
+
+        allTrades = [
+            {
+                "condition": getTradesCondition(symbol, [trade]),
+                "shape": style_mapping[trade["side"]]["shape"],
+                "location": style_mapping[trade["side"]]["location"],
+                "color": style_mapping[trade["side"]]["color"],
+                "text": str(int(trade["quantity"]))+"\\n$"+str(float(trade["quantity"])*float(trade["price"]))
+            } for trade in tradesFilteredBySymbol]
+
+        sourceCode += "\n" + "\n".join([getPlotShapeFunction(trade) for trade in allTrades])
+
+    else:
+        for elem in tradesBySymbol:
+            symbol = elem["symbol"]
+            trades = elem["trades"]
+            buyTradesCondition = getTradesCondition(symbol, [trade for trade in trades if trade["side"] == "buy"])
+            sellTradesCondition = getTradesCondition(symbol, [trade for trade in trades if trade["side"] == "sell"])
+            # change this to a class
+            buy = {"condition": buyTradesCondition, "shape": "triangleup", "location": "belowbar", "color": "green", "text": ""}
+            sell = {"condition": sellTradesCondition, "shape": "triangledown", "location": "abovebar", "color": "red", "text": ""}
+            sourceCode += "\n" + "\n".join([getPlotShapeFunction(trade) for trade in [buy, sell] if len(trade["condition"]) >  0])
+            # sourceCode += "\n" + "\n".join([getBGColorFunction(trade) for trade in [buy, sell]])
     return sourceCode
 
 #############################################################################################
@@ -74,7 +107,6 @@ check(t) =>
 #############################################################################################
 #############################################################################################
 
-DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
 TRADING_VIEW_OPTION = "tradingview"
 exporter = Exporter.Exporter("pinescript code")
 
@@ -82,6 +114,7 @@ parser = argparse.ArgumentParser(description='Generate pinescript to chart your 
 parser.add_argument('--debug', action='store_true', help='store raw JSON output to debug.json')
 parser.add_argument('--username', required=True, help='your Robinhood username')
 parser.add_argument('--password', required=True, help='your Robinhood password')
+parser.add_argument('--symbol', help='specific ticker symbol you want (this feature allows you to see the last 64 transactions on the specified symbol)')
 exporter.addArgumentsToParser(parser)
 args = parser.parse_args()
 
@@ -98,6 +131,6 @@ parsedTrades = parseTrades(trades)
 
 tradesBySymbol = consolidateTradesBySymbol(parsedTrades)
 
-sourceCode = getSourceCode(tradesBySymbol)
+sourceCode = getSourceCode(tradesBySymbol, args.symbol)
 
 exporter.exportText(sourceCode)

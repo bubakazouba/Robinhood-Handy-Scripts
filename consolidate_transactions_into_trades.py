@@ -1,10 +1,13 @@
-import re, datetime, argparse
+import re, argparse
+from datetime import datetime
 from Position import Position
 from GetRobinhoodTrades import getRobinhoodTrades
 import Exporter
 
+DATE_FORMAT = '%Y-%m-%dT%H:%M:%S'
+
 def consolidateTrades(trades):
-    trades.sort(key=lambda row: datetime.datetime.strptime(row['timestamp'][:row['timestamp'].find(".")], '%Y-%m-%dT%H:%M:%S'))
+    trades.sort(key=lambda row: datetime.strptime(row['timestamp'][:row['timestamp'].find(".")], DATE_FORMAT))
 
     current_positions = {}
     closed_positions = []
