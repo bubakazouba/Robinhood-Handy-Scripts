@@ -78,7 +78,7 @@ trades = getRobinhoodTrades(username, password, args.debug)
 
 closed_positions, current_positions = consolidateTrades(trades)
 # sort by time
-closed_positions.sort(key=lambda x: datetime.datetime.strptime(x.open_date[:x.open_date.find(".")], '%Y-%m-%dT%H:%M:%S'))
+closed_positions.sort(key=lambda x: datetime.strptime(x.open_date[:x.open_date.find(".")], '%Y-%m-%dT%H:%M:%S'))
 
 # print header row
 consolidated_trades = "\t".join(["Symbol", "Open Date", "Side" , "Cost Open/Share" , "# Shares" , "total in" , "Cost Close/Share" , "Total Out" , "Profit", "Profit %", "Close Date"])

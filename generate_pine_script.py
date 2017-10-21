@@ -53,19 +53,20 @@ def getBGColorFunction(trade):
     return """bgcolor(%s ? %s : na, transp=40)""" % (trade["condition"], trade["color"])
 
 def getSourceCode(tradesBySymbol, symbol):
+    symbol = symbol.upper() # case insensitive
     sourceCode = '''
 //@version=3
-study("My Trades", overlay=true)
+study("'''+symbol+'''", overlay=true)
 hoursMinutesBar = hour*60 + minute
 END_OF_DAY = 16*60 + 30
 hoursMinutesLastBar = END_OF_DAY - interval
 isLastBar = hoursMinutesBar == hoursMinutesLastBar
 check(t) =>
     hoursMinutesT = hour(t)*60 + minute(t)
-    year == year(t) and month == month(t) and dayofmonth == dayofmonth(t) and (isdaily or isintraday and ((hoursMinutesBar >= hoursMinutesT - 60 and hoursMinutesBar < hoursMinutesT) or (isLastBar and hoursMinutesT >= END_OF_DAY)))
+    year == year(t) and month == month(t) and dayofmonth == dayofmonth(t) and (isdaily or isintraday and ((hoursMinutesBar >= hoursMinutesT - interval and hoursMinutesBar < hoursMinutesT) or (isLastBar and hoursMinutesT >= END_OF_DAY)))
 '''
     if symbol is not None:
-        tradesFilteredBySymbol = [elem["trades"] for elem in tradesBySymbol if elem["symbol"] == symbol][0] # they are grouped by symbol, so we need the first and only element
+        tradesFilteredBySymbol = [elem["trades"] for elem in tradesBySymbol if elem["symbol"].upper() == symbol][0] # they are grouped by symbol, so we need the first and only element
         tradesFilteredBySymbol.sort(key=lambda row: datetime.strptime(row['timestamp'][:row['timestamp'].find(".")], DATE_FORMAT))
         tradesFilteredBySymbol = tradesFilteredBySymbol[-64:] # take last 64 trades
 
