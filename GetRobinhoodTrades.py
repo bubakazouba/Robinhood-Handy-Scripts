@@ -4,23 +4,12 @@ import collections
 import ast
 
 def getRobinhoodTrades(username, password, debug=False):
-	logged_in = False
-	robinhood = Robinhood();
+	robinhood = Robinhood()
 
-	# login to Robinhood
-	while not logged_in:
-	    if username == "":
-	        print("Robinhood username:")
-	        try: input = raw_input
-	        except NameError: pass
-	        username = input()
-	    if password == "":
-	        password = getpass.getpass()
-
-	    logged_in = robinhood.login(username=username, password=password)
-	    if logged_in == False:
-	        password = ""
-	        print ("Invalid username or password.  Try again.\n")
+	logged_in = robinhood.login(username=username, password=password)
+	if logged_in == False:
+	    print ("Invalid username or password.  Try again.\n")
+	    return None
 
 	trades = []
 	trade_count = 0
@@ -28,20 +17,6 @@ def getRobinhoodTrades(username, password, debug=False):
 
 	# fetch order history and related metadata from the Robinhood API
 	orders = robinhood.get_endpoint('orders')
-
-	# load a debug file
-	# raw_json = open('debug.txt','rU').read()
-	# orders = ast.literal_eval(raw_json)
-
-	# store debug 
-	if debug:
-	    # save the CSV
-	    try:
-	        with open("debug.txt", "w+") as outfile:
-	            outfile.write(str(orders))
-	            print("Debug infomation written to debug.txt")
-	    except IOError:
-	        print('Oops.  Unable to write file to debug.txt')
 
 	# do/while for pagination
 
@@ -61,8 +36,10 @@ def getRobinhoodTrades(username, password, debug=False):
 	            for execution in executions:
 	                # Get the Symbol of the order
 	                trades.append({})
-	                trades[-1]['symbol'] = cached_instruments.get(order['instrument'], robinhood.get_custom_endpoint(order['instrument'])['symbol'])
-	                cached_instruments[order['instrument']] = trades[-1]['symbol']
+	                if not cached_instruments.has_key(order['instrument']):
+	                	cached_instruments[order['instrument']] = robinhood.get_custom_endpoint(order['instrument'])['symbol']
+
+	                trades[-1]['symbol'] = cached_instruments[order['instrument']]
 
 	                # Get all the key,value from the order
 	                for key, value in enumerate(order):
@@ -81,13 +58,12 @@ def getRobinhoodTrades(username, password, debug=False):
 	    if orders['next'] is not None:
 	        page = page + 1
 	        #get the next order, a page is essentially one order
+	        if debug:
+	           print (str(page) + "," + orders['next'])
 	        orders = robinhood.get_custom_endpoint(str(orders['next']))
 	    else:
 	        paginated = False
 
-	#for i in trades:
-	#     print trades[i]
-	#     print "-------"    
 	#trades stores ALL relevant information
 
 	# check we have trade data to export

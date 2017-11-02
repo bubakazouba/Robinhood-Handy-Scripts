@@ -54,10 +54,10 @@ class Robinhood:
 
     def __init__(self):
         self.session = requests.session()
-        try:
-	        self.session.proxies = urllib.getproxies() #py2
-        except:
-                self.session.proxies = urllib.request.getproxies() #py3
+        if sys.version_info[0] < 3: #py2
+	        self.session.proxies = urllib.getproxies()
+        else: #py3
+            self.session.proxies = urllib.request.getproxies()
 
         self.headers = {
             "Accept": "*/*",
@@ -80,9 +80,9 @@ class Robinhood:
         self.username = username
         self.password = password
         #data = urllib.urlencode({"password" : self.password, "username" : self.username})
-        if sys.version_info[0] < 3:
+        if sys.version_info[0] < 3: #py2
             data = urllib.urlencode({"password" : self.password, "username" : self.username})
-        else:
+        else: #py3
             data = urllib.parse.urlencode({"password" : self.password, "username" : self.username})
         res = self.session.post(self.endpoints['login'], data=data)
         res = res.json()
@@ -140,7 +140,10 @@ class Robinhood:
         url = str(self.endpoints['quotes']) + str(stock) + "/"
         #Check for validity of symbol
         try:
-            res = json.loads((urllib.request.urlopen(url)).read().decode('utf-8'));
+            if sys.version_info[0] < 3: #py2
+                res = json.loads((urllib.urlopen(url)).read().decode('utf-8'));
+            else: #py3
+                res = json.loads((urllib.request.urlopen(url)).read().decode('utf-8'));
             if len(res) > 0:
                 return res;
             else:

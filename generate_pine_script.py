@@ -58,7 +58,7 @@ def getSourceCode(tradesBySymbol, symbol):
 //@version=3
 study("'''+symbol+'''", overlay=true)
 hoursMinutesBar = hour*60 + minute
-END_OF_DAY = 16*60 + 30
+END_OF_DAY = 16*60
 hoursMinutesLastBar = END_OF_DAY - interval
 isLastBar = hoursMinutesBar == hoursMinutesLastBar
 check(t) =>
