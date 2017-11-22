@@ -52,6 +52,8 @@ def consolidateTrades(trades):
                 closed_positions.append(current_positions[current_symbol])
                 del current_positions[current_symbol]
 
+    current_positions = [current_positions[symbol] for symbol in current_positions.keys()]
+
     return closed_positions, current_positions
 
 #############################################################################################
@@ -78,13 +80,14 @@ trades = getRobinhoodTrades(username, password, args.debug)
 
 closed_positions, current_positions = consolidateTrades(trades)
 # sort by time
-closed_positions.sort(key=lambda x: datetime.strptime(x.open_date[:x.open_date.find(".")], '%Y-%m-%dT%H:%M:%S'))
+closed_positions.sort(key=lambda x: datetime.strptime(x.close_date[:x.close_date.find(".")], '%Y-%m-%dT%H:%M:%S'))
+current_positions.sort(key=lambda x: datetime.strptime(x.open_date[:x.open_date.find(".")], '%Y-%m-%dT%H:%M:%S'))
 
 # print header row
 consolidated_trades = "\t".join(["Symbol", "Open Date", "Side" , "Cost Open/Share" , "# Shares" , "total in" , "Cost Close/Share" , "Total Out" , "Profit", "Profit %", "Close Date"])
 consolidated_trades += '\n'
 consolidated_trades += '\n'.join([position.to_string() for position in closed_positions])
 consolidated_trades += '\n'
-consolidated_trades += '\n'.join([current_positions[symbol].to_string() for symbol in current_positions.keys()])
+consolidated_trades += '\n'.join([position.to_string() for position in current_positions])
 
 exporter.exportText(consolidated_trades)
