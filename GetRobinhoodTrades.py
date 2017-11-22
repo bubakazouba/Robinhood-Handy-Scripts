@@ -17,9 +17,10 @@ def getRobinhoodTrades(username, password, debug=False):
 
     if os.path.isfile("robinhood_cache"):
         robinhood_cache = pickle.load(open("robinhood_cache", "rb"))
-        last_page_url = robinhood_cache['last_page_url']
+        # last_page_url = robinhood_cache['last_page_url']
+        print last_page_url
         cached_instruments = robinhood_cache['instruments']
-        trades = robinhood_cache['trades']
+        # trades = robinhood_cache['trades']
     
     if not os.path.isfile("robinhood_cache") or last_page_url is None:
         # fetch order history and related metadata from the Robinhood API
