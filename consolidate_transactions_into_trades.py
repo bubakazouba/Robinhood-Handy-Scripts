@@ -21,7 +21,7 @@ def consolidateTrades(trades):
         if current_side == 'buy':
             current_open_price = float(trade['price'])
 
-            if current_positions.has_key(current_symbol):
+            if current_symbol in current_positions:
                 current_positions[current_symbol].total_in += current_quantity * current_open_price
                 current_positions[current_symbol].total_number_of_shares += current_quantity
                 current_positions[current_symbol].remaining_number_of_shares += current_quantity
@@ -34,8 +34,8 @@ def consolidateTrades(trades):
                 current_positions[current_symbol].open_date = current_date
 
         elif current_side == 'sell':
-            if not current_positions.has_key(current_symbol):
-                print "ERROR at symbol: '%s'. Skipping.." % current_symbol
+            if current_symbol not in current_positions:
+                print("ERROR at symbol: '%s'. Skipping.." % current_symbol)
                 continue # error: just skip it
 
             current_close_price = float(trade['price'])

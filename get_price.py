@@ -10,7 +10,7 @@ def get_price(symbol):
 	current_price = float(robinhood.quote_data(symbol)['last_trade_price'])
 	current_price_str = "$%.2f" % current_price
 
-        print symbol
+        print(symbol)
         x = robinhood.quote_data(symbol)['last_extended_hours_trade_price']
 	if x is None:
 		return current_price_str
@@ -20,7 +20,7 @@ def get_price(symbol):
 
 	return current_price_str + "," + extended_price_str
 
-exporter = Exporter.Exporter("positions")
+exporter = Exporter.Exporter("price")
 
 parser = argparse.ArgumentParser(description='Generate pinescript to chart your robinhood trades on tradingview.')
 parser.add_argument('--debug', action='store_true', help='store raw JSON output to debug.json')

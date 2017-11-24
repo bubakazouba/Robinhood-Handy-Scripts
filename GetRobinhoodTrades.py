@@ -18,7 +18,7 @@ def getRobinhoodTrades(username, password, debug=False):
     if os.path.isfile("robinhood_cache"):
         robinhood_cache = pickle.load(open("robinhood_cache", "rb"))
         # last_page_url = robinhood_cache['last_page_url']
-        print last_page_url
+        print(last_page_url)
         cached_instruments = robinhood_cache['instruments']
         # trades = robinhood_cache['trades']
     
@@ -42,7 +42,7 @@ def getRobinhoodTrades(username, password, debug=False):
                 for execution in executions:
                     # Get the Symbol of the order
                     trades.append({})
-                    if not cached_instruments.has_key(order['instrument']):
+                    if order['instrument'] not in cached_instruments:
                         cached_instruments[order['instrument']] = robinhood.get_custom_endpoint(order['instrument'])['symbol']
 
                     trades[-1]['symbol'] = cached_instruments[order['instrument']]
@@ -63,7 +63,7 @@ def getRobinhoodTrades(username, password, debug=False):
             page = page + 1
             #get the next order, a page is essentially one order
             if debug:
-               print (str(page) + "," + orders['next'])
+               print(str(page) + "," + orders['next'])
             last_page_url = orders['next']
             length_of_trades_at_last_page = len(trades)
             orders = robinhood.get_custom_endpoint(orders['next'])

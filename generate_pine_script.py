@@ -24,7 +24,7 @@ def parseTrades(trades):
                 "side": trade["side"],
                 "timestamp": trade["timestamp"]})
         except Exception as e:
-            print e
+            print(e)
             continue
     return parsedTrades
 

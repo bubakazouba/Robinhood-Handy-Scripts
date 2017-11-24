@@ -17,7 +17,7 @@ def get_positions(robinhood):
 		
 		percentage_move = (current_price - buy_price)/current_price
 		percentage_move_str = ("%+.2f" % (percentage_move * 100)) + "%"
-		price_move_str = "$%+.2f" % price_move
+		price_move_str = ("+" if price_move >= 0 else "-") + "$%.2f" % abs(price_move)
 		buy_price_str = "$%.2f" % buy_price
 		current_price_str = "$%.2f" % current_price
 		quantity_str = str(quantity)
